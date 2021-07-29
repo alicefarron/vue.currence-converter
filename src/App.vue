@@ -1,17 +1,22 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <top-header title="Рассчет валют"></top-header>
+    <main-screen></main-screen>
+    <main-footer></main-footer>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import MainScreen from './pages/MainScreen.vue';
+import TopHeader from './pages/Layout/TopHeader.vue';
+import MainFooter from './pages/Layout/MainFooter.vue';
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    MainScreen,
+    TopHeader,
+    MainFooter,
   }
 }
 </script>
@@ -21,8 +26,6 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
 }
 </style>
