@@ -21,13 +21,13 @@
               @change="updateCountry"
               v-model="countrySelectFirst"
             >
-              <option v-for="country in countries" :key="country">
+              <option v-for="(country, index) in countries" :key="index">
                 <p>{{ country }}</p>
               </option>
             </select>
             <input
               class="country-choose__field"
-              @keyup="calculate($event, 'first')"
+              @keyup="calculateCurrency('first')"
               v-model.number="firstVal"
             />
           </div>
@@ -36,7 +36,7 @@
             title="Переключить валюту"
             @click="switchCurrency"
           >
-            <img src="../assets/img/transfer-arrows.svg" />
+            <img src="../assets/img/transfer-arrows.svg" alt="Переключение" />
           </button>
           <div class="country-choose">
             <select
@@ -51,7 +51,7 @@
             <input
               class="country-choose__field"
               v-model.number="secondVal"
-              @keyup="calculate($event, 'second')"
+              @keyup="calculateCurrency('second')"
             />
           </div>
         </div>
@@ -59,16 +59,15 @@
 
       <section class="base-block base-block--price" v-if="price">
         <h3 class="base-block__title">Список стоимостей</h3>
-
         <base-table :data="priceTable.data" :columns="priceTable.columns">
         </base-table>
       </section>
+
       <section class="base-block base-block--story" v-if="story">
         <h3 class="base-block__title">Список истории курса конвертации</h3>
         <p>
           Отображение кофициента конвертации за последние 10 дней - USD, RUS
         </p>
-
         <base-table :data="historyData.data" :columns="historyData.columns">
         </base-table>
       </section>
@@ -91,11 +90,11 @@ export default {
       secondVal: null,
       countrySelectFirst: "",
       countrySelectSecond: "",
+      firstCurrentUnit: 0,
+      secondCurrentUnit: 0,
       price: false,
       story: true,
       countries: [],
-      firstCurrentUnit: 0,
-      secondCurrentUnit: 0,
       historyData: {
         columns: [
           {
@@ -137,17 +136,13 @@ export default {
       if (this.countrySelectFirst && this.countrySelectSecond) {
         const firstCurrency = `${this.countrySelectFirst}_${this.countrySelectSecond}`;
         const secondCurrency = `${this.countrySelectSecond}_${this.countrySelectFirst}`;
-        console.log(firstCurrency);
-        console.log(secondCurrency);
-        //const result = await this.action(`convert?q=${firstCurrency},${secondCurrency}&compact=ultra&`);
-        //this.firstCurrentUnit = result[firstCurrency];
-        //this.secondCurrentUnit = result[secondCurrency];
-        this.firstCurrentUnit = 4.358991;
-        this.secondCurrentUnit = 14.358991;
+        const result = await this.action(`convert?q=${firstCurrency},${secondCurrency}&compact=ultra&`);
+        this.firstCurrentUnit = result[firstCurrency];
+        this.secondCurrentUnit = result[secondCurrency];
       }
     },
 
-    calculate(event, input) {
+    calculateCurrency(input) {
       if (input === "first") {
         this.secondVal = (this.firstVal * this.firstCurrentUnit).toFixed(2);
       } else {
@@ -164,6 +159,7 @@ export default {
       const tempCountry = this.countrySelectFirst;
       const tempVal = this.firstVal;
       const tempUnit = this.firstCurrentUnit;
+
       this.countrySelectFirst = this.countrySelectSecond;
       this.countrySelectSecond = tempCountry;
 
@@ -175,31 +171,7 @@ export default {
     },
 
     async getHistoryData() {
-      //let data = await this.action(`convert?q=USD_RUB,RUB_USD&compact=ultra&date=${this.dateTenDays}&endDate=${this.dateNow}&`);
-      let data = {
-        RUB_USD: {
-          "2021-07-24": 0.013538,
-          "2021-07-25": 0.013565,
-          "2021-07-26": 0.013566,
-          "2021-07-27": 0.013561,
-          "2021-07-28": 0.013612,
-          "2021-07-29": 0.013663,
-          "2021-07-30": 0.013671,
-          "2021-07-31": 0.013671,
-          "2021-08-01": 0.013671,
-        },
-        USD_RUB: {
-          "2021-07-24": 73.868204,
-          "2021-07-25": 73.717304,
-          "2021-07-26": 73.716099,
-          "2021-07-27": 73.741298,
-          "2021-07-28": 73.465198,
-          "2021-07-29": 73.188012,
-          "2021-07-30": 73.149404,
-          "2021-07-31": 73.149404,
-          " 2021-08-01": 73.149404,
-        },
-      };
+      let data = await this.action(`convert?q=USD_RUB,RUB_USD&compact=ultra&date=${this.dateTenDays}&endDate=${this.dateNow}&`);
 
       data.RUB_USD = Object.entries(data.RUB_USD);
       data.USD_RUB = Object.entries(data.USD_RUB);
@@ -215,11 +187,7 @@ export default {
     },
 
     async getPriceTableData() {
-      //let data = await this.action('convert?q=USD_EUR,EUR_USD&compact=ultra&');
-      const data = {
-        EUR_USD: 1.1867,
-        USD_EUR: 0.842673,
-      };
+      const data = await this.action('convert?q=USD_EUR,EUR_USD&compact=ultra&');
 
       const unit = [1, 5, 10, 25, 50, 100, 500, 1000, 5000];
 
@@ -233,25 +201,8 @@ export default {
     },
 
     async getCountries() {
-      //let data = await this.action('countries?');
-      // data = data.results;
-      let data = {
-        AD: {
-          alpha3: "AND",
-          currencyId: "EUR",
-          currencyName: "European euro",
-          currencySymbol: "€",
-          id: "AD",
-          name: "Andorra",
-        },
-        AE: {
-          alpha3: "ARE",
-          currencyId: "AED",
-          currencyName: "UAE dirham",
-          currencySymbol: "فلس",
-          id: "AE",
-        },
-      };
+      let data = await this.action('countries?');
+      data = data.results;
 
       for (let key in data) {
         this.countries.push(data[key].currencyId);
@@ -273,10 +224,10 @@ export default {
       return new Date().toISOString().slice(0, 10);
     },
     dateTenDays() {
-      let d = new Date();
+      let date = new Date();
       // к сожалению, апи поддерживает только 8 дней
-      d.setDate(d.getDate() - 8);
-      return d
+      date.setDate(date.getDate() - 8);
+      return date
         .toISOString()
         .toString()
         .slice(0, 10);
@@ -382,10 +333,7 @@ button {
 .country-choose {
   display: flex;
   flex-direction: column;
-
-  @media (max-width: 1300px) {
-    width: 45%;
-  }
+  width: 45%;
 
   &__select {
     border-radius: 5px;
